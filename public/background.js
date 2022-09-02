@@ -32,6 +32,21 @@ chrome.action.onClicked.addListener(() => {
 })
 
 chrome.runtime.onMessage.addListener((request, sender, response) => {
+  if(request.message === 'START_RECORDING') {
+    chrome.desktopCapture.chooseDesktopMedia(['tab', 'screen', 'window'], sender.tab, (screenId, options) => {
+      if (screenId === '') {
+        chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
+          chrome.tabs.sendMessage(tabs[0].id, {message: 'NO_SCREENID'});
+        } )
+      } else {
+        chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
+          chrome.tabs.sendMessage(tabs[0].id, {message: 'START_WITH_RECORDING', screenId});
+        } )
+        // sendMessageToActiveTab({message: 'TEST_USER_MEDIA'})
+      }
+  });
+  }
+
     if(request.operation==='send-value') {
       let inp = request.input;
       let value = request.value;

@@ -2,74 +2,54 @@
 
 import React, { useState, useCallback } from 'react';
 import ReactDOM from 'react-dom';
+import RecordRTC, { MediaStreamRecorder, invokeSaveAsDialog } from 'recordrtc';
 import Keypad from './components/Keypad';
 import Screen from './components/Screen';
 import styled from 'styled-components';
 import { StyleSheetManager } from 'styled-components';
 
-const AppDiv = styled.div`
-  text-align: center;
-  display: ${(props) => props.display ? 'flex': 'none'};
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 480px;
-  height: 580px;
-  background-color: rgba(245,104,156,255);
-  `;
-
-  const CalculatorDiv = styled.div`
-  width: 90%;
-  height: 90%;
-  background-color: rgba(67,67,67,255);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border: 2px  rgba(136,140,139,255) solid;
-  outline: 2px solid rgba(42,42,33,255);
-  border-radius: 17px;
-  box-shadow: 58px 88px 238px #0a0909b5;
-  `;
-
-
-// code from calculator js
-function Calculator() {
-    const [value, setValue] = useState(0); // last value entered
-    const [mainDisplay, setMainDisplay] = useState(false);
-
-    chrome.runtime.onMessage.addListener((req) => {
-        if(req.toggle) {
-            setMainDisplay(!mainDisplay);
+chrome.runtime.onMessage.addListener((req) => {
+  if(req.message==='START_WITH_RECORDING') {
+    navigator.getUserMedia({
+      video: {
+        mandatory: {
+          chromeMediaSource: 'desktop',
+          chromeMediaSourceId: req.screenId,
         }
-    });
-
-    const handleInputChange = useCallback((inp, lastVal='') => {
-      chrome.runtime.sendMessage({
-        operation: 'send-value',
-        input: inp,
-        value: lastVal 
-      }, (response) => {
-        setValue(response.result);
+      }
+  }, (videoStream) => {
+      const videoTracks = videoStream.getTracks();
+      videoTracks.forEach(track => {
+          track.addEventListener('ended', () => {
+              alert(`video track ended`)
+          });
       });
-    }, []);
-    
-    return (
-        <AppDiv display = {mainDisplay}>
-            <CalculatorDiv>
-                <Screen
-                value={value}
-                setValue={setValue}
-                handleInputChange={handleInputChange}
-                />
-                <Keypad
-                value={value}
-                setValue={setValue}
-                handleInputChange={handleInputChange}
-                />
-            </CalculatorDiv>
-        </AppDiv>
-    );
+      navigator.mediaDevices.getUserMedia({
+        audio: true
+      }).then((audioStream) => {
+        videoStream.addTrack(audioStream.getTracks()[0]);
+        const recorder = RecordRTC(videoStream, {
+          type: 'video',
+          mimeType: 'video/webm;codecs=vp9,opus',
+          recorderType: MediaStreamRecorder,
+          getNativeBlob: !0,
+        });
+        recorder.startRecording();
+        setTimeout(() => {
+            recorder.stopRecording(() => {
+                const blob = recorder.getBlob();
+                invokeSaveAsDialog(blob);
+            });
+        }, 15000)
+      }).catch((err) => {
+          alert(`getUserMedia err audio: ${err}`);
+      });
+  }, (err) => {
+      alert(`getUserMedia err video: ${err}`)
+  })
   }
+})
+
 // create shadow host
 const shadowHost = document.createElement('div');
 shadowHost.className = 'shadow-host';
@@ -115,7 +95,10 @@ styleSlot.appendChild(renderIn);
 // render the app
 ReactDOM.render(
   <StyleSheetManager target={styleSlot}>
-        <Calculator/>
+        <button onClick={() => {
+          alert('clicked')
+          chrome.runtime.sendMessage({ message: 'START_RECORDING' });
+        }}>Start Recording</button>
   </StyleSheetManager>,
   renderIn
 );

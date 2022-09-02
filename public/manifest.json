@@ -7,21 +7,38 @@
   "background": {
     "service_worker": "background.js"
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "/static/css/*.css",
+        "static/media/*",
+        "/static/js/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "content_scripts" : [
     {
       "matches": [ "<all_urls>" ],
-      "run_at": "document_idle",
+      "match_origin_as_fallback": true,
       "css": ["/static/css/app.css"],
       "js": ["/static/js/content.js"]
     }
   ],
     "permissions": [
-        "tabs",
-        "scripting",
-        "storage",
-        "contextMenus"
+      "tabCapture",
+      "activeTab",
+      "tabs",
+      "scripting",
+      "storage",
+      "desktopCapture",
+      "notifications",
+      "unlimitedStorage"
     ],
     "host_permissions": [
       "<all_urls>"
-    ]
+    ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+    }
 }
