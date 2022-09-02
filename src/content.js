@@ -10,6 +10,7 @@ import { StyleSheetManager } from 'styled-components';
 
 chrome.runtime.onMessage.addListener((req) => {
   if(req.message==='START_WITH_RECORDING') {
+    // mandatory works here. Then why not in plugin content script ?
     navigator.getUserMedia({
       video: {
         mandatory: {

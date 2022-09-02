@@ -46,7 +46,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
       }
   });
   }
-
+/*
     if(request.operation==='send-value') {
       let inp = request.input;
       let value = request.value;
@@ -221,5 +221,5 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
                     postf: postf});
         }
       }
-    }
+    } */
   });
